@@ -6,8 +6,10 @@
     <title>KMITL FLOOD CENTER | KMITL</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDo1UwC4HS01wl8FTpnW8iLyatrexxOffE&callback=initMap" async defer></script>
     <script src="https://www.youtube.com/iframe_api"></script>
+    
     <style>
         :root {
             --bg-color: #f4f7fa; --text-color: #1e293b; --card-bg: #ffffff;
@@ -322,6 +324,9 @@
             btnElement.classList.add('active');
         }
 
+        // ==========================================
+        // ระบบแผนที่ Google Maps API
+        // ==========================================
         let normalMap1, normalMap2, floodMap1, floodMap2;
         let normalMarker1, normalMarker2, floodMarker1, floodMarker2;
         let floodCircle1, floodCircle2;
@@ -370,6 +375,21 @@
             document.getElementById('btn_mode_flood').classList.toggle('active', mode === 'flood');
             updateMapVisibility();
         }
+
+        function updateFloodAnMap(map, circle, marker, lat, lng, percentage) {
+            if (lat != 0) {
+                const pos = {lat: lat, lng: lng};
+                marker.setPosition(pos); circle.setCenter(pos); map.setCenter(pos); 
+                circle.setRadius(percentage * 2.0);
+                
+                let color = "#10b981"; 
+                if (percentage >= 80) color = "#ef4444"; 
+                else if (percentage >= 50) color = "#f59e0b"; 
+                
+                circle.setOptions({strokeColor: color, fillColor: color});
+            }
+        }
+        // ==========================================
 
         let waterLabels = [];
         let levelDataN1 = [], levelDataN2 = [];
@@ -486,20 +506,6 @@
             else if (text.includes("HIGH") || text.includes("IMMINENT") || text.includes("STORM") || text.includes("CRITICAL") || text.includes("DANGER") || text.includes("SEVERE") || text.includes("RISING")) el.style.color = "#ef4444"; 
             else el.style.color = "var(--text-color)";
         }
-
-        function updateFloodAnMap(map, circle, marker, lat, lng, percentage) {
-            if (lat != 0) {
-                const pos = {lat: lat, lng: lng};
-                marker.setPosition(pos); circle.setCenter(pos); map.setCenter(pos); 
-                circle.setRadius(percentage * 2.0);
-                
-                let color = "#10b981"; 
-                if (percentage >= 80) color = "#ef4444"; 
-                else if (percentage >= 50) color = "#f59e0b"; 
-                
-                circle.setOptions({strokeColor: color, fillColor: color});
-            }
-        }
     </script>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -524,24 +530,20 @@
             const data = snapshot.val();
             if(!data) return;
 
-            // ฟังก์ชันป้องกัน Error (ดึงค่าแบบปลอดภัย ตัวไหนดับก็แทนที่ด้วยเลข 0)
             const getVal = (obj, key, fallback) => (obj && obj[key] !== undefined) ? obj[key] : fallback;
 
-            // --- เตรียมข้อมูล Node 1 ---
             let p1 = getVal(data.node1, 'p', 0), r1 = getVal(data.node1, 'r', 0);
             let te1 = getVal(data.node1, 'te', 0.0), pr1 = getVal(data.node1, 'pr', 0.0);
             let la1 = getVal(data.node1, 'la', 0.0), lo1 = getVal(data.node1, 'lo', 0.0);
             let t1 = getVal(data.node1, 't', 99), d1 = getVal(data.node1, 'd', 0);
             let ai_w1 = getVal(data.node1, 'ai_w', "WAITING DATA"), ai_r1 = getVal(data.node1, 'ai_r', "WAITING DATA");
 
-            // --- เตรียมข้อมูล Node 2 ---
             let p2 = getVal(data.node2, 'p', 0), r2 = getVal(data.node2, 'r', 0);
             let te2 = getVal(data.node2, 'te', 0.0), pr2 = getVal(data.node2, 'pr', 0.0);
             let la2 = getVal(data.node2, 'la', 0.0), lo2 = getVal(data.node2, 'lo', 0.0);
             let t2 = getVal(data.node2, 't', 99), d2 = getVal(data.node2, 'd', 0);
             let ai_w2 = getVal(data.node2, 'ai_w', "WAITING DATA"), ai_r2 = getVal(data.node2, 'ai_r', "WAITING DATA");
 
-            // --- อัปเดต UI Node 1 ---
             document.getElementById('n1_water').innerText = p1 + " %";
             document.getElementById('n1_rain').innerText = r1 > 0 ? "RAINING" : "DRY";
             document.getElementById('n1_env').innerText = Number(te1).toFixed(1) + " °C / " + Number(pr1).toFixed(1) + " hPa";
@@ -551,7 +553,6 @@
             setRiskColor('n1_ai_weather', ai_w1);
             setRiskColor('n1_ai_risk', ai_r1);
 
-            // --- อัปเดต UI Node 2 ---
             document.getElementById('n2_water').innerText = p2 + " %";
             document.getElementById('n2_rain').innerText = r2 > 0 ? "RAINING" : "DRY";
             document.getElementById('n2_env').innerText = Number(te2).toFixed(1) + " °C / " + Number(pr2).toFixed(1) + " hPa";
@@ -561,7 +562,6 @@
             setRiskColor('n2_ai_weather', ai_w2);
             setRiskColor('n2_ai_risk', ai_r2);
 
-            // --- อัปเดต LINE Alert ---
             let lineBanner = document.getElementById('line_banner');
             document.getElementById('line_text').innerText = "LINE STATUS: " + getVal(data.line, 'msg', "STANDBY (NORMAL)");
             if(getVal(data.line, 'alert', false)) {
@@ -572,7 +572,6 @@
                 document.getElementById('line_icon').innerText = '💬';
             }
 
-            // --- อัปเดตกราฟ ---
             let t = new Date().toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
             if(waterLabels.length > 20) { 
                 waterLabels.shift(); levelDataN1.shift(); levelDataN2.shift(); distDataN1.shift(); distDataN2.shift();
@@ -582,7 +581,7 @@
             envLabels.push(t); tempDataN1.push(Number(te1)); tempDataN2.push(Number(te2)); pressDataN1.push(Number(pr1)); pressDataN2.push(Number(pr2));
             waterChart.update(); envChart.update();
 
-            // --- อัปเดตแผนที่ ---
+            // อัปเดตแผนที่ Google Maps ตามพิกัดที่ส่งมาจาก ESP32
             if(la1 != 0 && normalMarker1) { const pos1 = {lat: la1, lng: lo1}; normalMarker1.setPosition(pos1); normalMap1.setCenter(pos1); }
             if(la2 != 0 && normalMarker2) { const pos2 = {lat: la2, lng: lo2}; normalMarker2.setPosition(pos2); normalMap2.setCenter(pos2); }
             if(la1 != 0 && floodMarker1) updateFloodAnMap(floodMap1, floodCircle1, floodMarker1, la1, lo1, p1);
