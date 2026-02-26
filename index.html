@@ -473,8 +473,8 @@
             return `<span class="badge bg-safe">SAFE</span>`;
         }
 
-        function getStatusBadge(secondsAgo) {
-            if(secondsAgo > 10) return `<span class="badge-status bg-offline">OFFLINE</span>`;
+        function getStatusBadge(t) {
+            if(t > 10) return `<span class="badge-status bg-offline">OFFLINE</span>`;
             return `<span class="badge-status bg-online">ONLINE</span>`;
         }
 
@@ -524,35 +524,52 @@
             const data = snapshot.val();
             if(!data) return;
 
-            // --- อัปเดตข้อมูล Node 1 ---
-            document.getElementById('n1_water').innerText = data.node1.p + " %";
-            document.getElementById('n1_rain').innerText = data.node1.r > 0 ? "RAINING" : "DRY";
-            document.getElementById('n1_env').innerText = data.node1.te.toFixed(1) + " °C / " + data.node1.pr.toFixed(1) + " hPa";
-            document.getElementById('n1_pos').innerText = data.node1.la.toFixed(4) + ", " + data.node1.lo.toFixed(4);
-            document.getElementById('n1_warn').innerHTML = getWarningBadge(data.node1.p);
-            document.getElementById('n1_status').innerHTML = getStatusBadge(data.node1.t);
-            setRiskColor('n1_ai_weather', data.node1.ai_w);
-            setRiskColor('n1_ai_risk', data.node1.ai_r);
+            // ฟังก์ชันป้องกัน Error (ดึงค่าแบบปลอดภัย ตัวไหนดับก็แทนที่ด้วยเลข 0)
+            const getVal = (obj, key, fallback) => (obj && obj[key] !== undefined) ? obj[key] : fallback;
 
-            // --- อัปเดตข้อมูล Node 2 ---
-            document.getElementById('n2_water').innerText = data.node2.p + " %";
-            document.getElementById('n2_rain').innerText = data.node2.r > 0 ? "RAINING" : "DRY";
-            document.getElementById('n2_env').innerText = data.node2.te.toFixed(1) + " °C / " + data.node2.pr.toFixed(1) + " hPa";
-            document.getElementById('n2_pos').innerText = data.node2.la.toFixed(4) + ", " + data.node2.lo.toFixed(4);
-            document.getElementById('n2_warn').innerHTML = getWarningBadge(data.node2.p);
-            document.getElementById('n2_status').innerHTML = getStatusBadge(data.node2.t);
-            setRiskColor('n2_ai_weather', data.node2.ai_w);
-            setRiskColor('n2_ai_risk', data.node2.ai_r);
+            // --- เตรียมข้อมูล Node 1 ---
+            let p1 = getVal(data.node1, 'p', 0), r1 = getVal(data.node1, 'r', 0);
+            let te1 = getVal(data.node1, 'te', 0.0), pr1 = getVal(data.node1, 'pr', 0.0);
+            let la1 = getVal(data.node1, 'la', 0.0), lo1 = getVal(data.node1, 'lo', 0.0);
+            let t1 = getVal(data.node1, 't', 99), d1 = getVal(data.node1, 'd', 0);
+            let ai_w1 = getVal(data.node1, 'ai_w', "WAITING DATA"), ai_r1 = getVal(data.node1, 'ai_r', "WAITING DATA");
+
+            // --- เตรียมข้อมูล Node 2 ---
+            let p2 = getVal(data.node2, 'p', 0), r2 = getVal(data.node2, 'r', 0);
+            let te2 = getVal(data.node2, 'te', 0.0), pr2 = getVal(data.node2, 'pr', 0.0);
+            let la2 = getVal(data.node2, 'la', 0.0), lo2 = getVal(data.node2, 'lo', 0.0);
+            let t2 = getVal(data.node2, 't', 99), d2 = getVal(data.node2, 'd', 0);
+            let ai_w2 = getVal(data.node2, 'ai_w', "WAITING DATA"), ai_r2 = getVal(data.node2, 'ai_r', "WAITING DATA");
+
+            // --- อัปเดต UI Node 1 ---
+            document.getElementById('n1_water').innerText = p1 + " %";
+            document.getElementById('n1_rain').innerText = r1 > 0 ? "RAINING" : "DRY";
+            document.getElementById('n1_env').innerText = Number(te1).toFixed(1) + " °C / " + Number(pr1).toFixed(1) + " hPa";
+            document.getElementById('n1_pos').innerText = Number(la1).toFixed(4) + ", " + Number(lo1).toFixed(4);
+            document.getElementById('n1_warn').innerHTML = getWarningBadge(p1);
+            document.getElementById('n1_status').innerHTML = getStatusBadge(t1);
+            setRiskColor('n1_ai_weather', ai_w1);
+            setRiskColor('n1_ai_risk', ai_r1);
+
+            // --- อัปเดต UI Node 2 ---
+            document.getElementById('n2_water').innerText = p2 + " %";
+            document.getElementById('n2_rain').innerText = r2 > 0 ? "RAINING" : "DRY";
+            document.getElementById('n2_env').innerText = Number(te2).toFixed(1) + " °C / " + Number(pr2).toFixed(1) + " hPa";
+            document.getElementById('n2_pos').innerText = Number(la2).toFixed(4) + ", " + Number(lo2).toFixed(4);
+            document.getElementById('n2_warn').innerHTML = getWarningBadge(p2);
+            document.getElementById('n2_status').innerHTML = getStatusBadge(t2);
+            setRiskColor('n2_ai_weather', ai_w2);
+            setRiskColor('n2_ai_risk', ai_r2);
 
             // --- อัปเดต LINE Alert ---
             let lineBanner = document.getElementById('line_banner');
-            document.getElementById('line_text').innerText = "LINE STATUS: " + data.line.msg;
-            if(data.line.alert) {
+            document.getElementById('line_text').innerText = "LINE STATUS: " + getVal(data.line, 'msg', "STANDBY (NORMAL)");
+            if(getVal(data.line, 'alert', false)) {
                 lineBanner.classList.add('alert');
                 document.getElementById('line_icon').innerText = '🔔';
             } else {
                 lineBanner.classList.remove('alert');
-                document.getElementById('line_icon').innerText = '🟢';
+                document.getElementById('line_icon').innerText = '💬';
             }
 
             // --- อัปเดตกราฟ ---
@@ -561,15 +578,15 @@
                 waterLabels.shift(); levelDataN1.shift(); levelDataN2.shift(); distDataN1.shift(); distDataN2.shift();
                 envLabels.shift(); tempDataN1.shift(); tempDataN2.shift(); pressDataN1.shift(); pressDataN2.shift();
             }
-            waterLabels.push(t); levelDataN1.push(data.node1.p); levelDataN2.push(data.node2.p); distDataN1.push(data.node1.d); distDataN2.push(data.node2.d);
-            envLabels.push(t); tempDataN1.push(data.node1.te); tempDataN2.push(data.node2.te); pressDataN1.push(data.node1.pr); pressDataN2.push(data.node2.pr);
+            waterLabels.push(t); levelDataN1.push(p1); levelDataN2.push(p2); distDataN1.push(d1); distDataN2.push(d2);
+            envLabels.push(t); tempDataN1.push(Number(te1)); tempDataN2.push(Number(te2)); pressDataN1.push(Number(pr1)); pressDataN2.push(Number(pr2));
             waterChart.update(); envChart.update();
 
             // --- อัปเดตแผนที่ ---
-            if(data.node1.la != 0 && normalMarker1) { const pos1 = {lat: data.node1.la, lng: data.node1.lo}; normalMarker1.setPosition(pos1); normalMap1.setCenter(pos1); }
-            if(data.node2.la != 0 && normalMarker2) { const pos2 = {lat: data.node2.la, lng: data.node2.lo}; normalMarker2.setPosition(pos2); normalMap2.setCenter(pos2); }
-            if(data.node1.la != 0 && floodMarker1) updateFloodAnMap(floodMap1, floodCircle1, floodMarker1, data.node1.la, data.node1.lo, data.node1.p);
-            if(data.node2.la != 0 && floodMarker2) updateFloodAnMap(floodMap2, floodCircle2, floodMarker2, data.node2.la, data.node2.lo, data.node2.p);
+            if(la1 != 0 && normalMarker1) { const pos1 = {lat: la1, lng: lo1}; normalMarker1.setPosition(pos1); normalMap1.setCenter(pos1); }
+            if(la2 != 0 && normalMarker2) { const pos2 = {lat: la2, lng: lo2}; normalMarker2.setPosition(pos2); normalMap2.setCenter(pos2); }
+            if(la1 != 0 && floodMarker1) updateFloodAnMap(floodMap1, floodCircle1, floodMarker1, la1, lo1, p1);
+            if(la2 != 0 && floodMarker2) updateFloodAnMap(floodMap2, floodCircle2, floodMarker2, la2, lo2, p2);
         });
     </script>
 </body>
