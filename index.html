@@ -6,9 +6,10 @@
     <title>KMITL FLOOD CENTER | KMITL</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDo1UwC4HS01wl8FTpnW8iLyatrexxOffE&callback=initMap" async defer></script>
     <script src="https://www.youtube.com/iframe_api"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     
     <style>
         :root {
@@ -119,10 +120,11 @@
         .chip { padding: 8px 28px; border-radius: 30px; border: 1px solid var(--border); background: var(--btn-bg); color: var(--btn-text); cursor: pointer; font-size: 1.3rem; }
         .chip.active { background: var(--heading-color); color: white; border-color: var(--heading-color); }
         
+        /* 🌟 ปรับปรุงการซ่อน/แสดงแผนที่ของ Leaflet ให้เนียนขึ้น 🌟 */
         .map-container { position: relative; height: 500px; width: 100%; border-radius: 12px; overflow: hidden; border: 2px solid var(--border);}
-        .map-view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; z-index: 1; pointer-events: none; transition: opacity 0.4s ease; }
-        .map-view.active { opacity: 1; z-index: 2; pointer-events: auto; }
-        body.dark-mode .map-view { filter: invert(90%) hue-rotate(180deg); }
+        .map-view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; visibility: hidden; opacity: 0; z-index: 1; transition: opacity 0.4s ease; }
+        .map-view.active { visibility: visible; opacity: 1; z-index: 2; }
+        body.dark-mode .leaflet-tile-pane { filter: invert(90%) hue-rotate(180deg) brightness(95%) contrast(90%); } /* แผนที่โหมดมืดแบบเท่ๆ */
     </style>
 </head>
 <body>
@@ -322,10 +324,18 @@
             document.querySelectorAll('.page-tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(viewId).classList.add('active');
             btnElement.classList.add('active');
+            
+            // 🌟 สำคัญ! เพื่อให้แผนที่ Leaflet โหลดขนาดถูกต้องเมื่อสลับแท็บ
+            setTimeout(() => {
+                if(normalMap1) normalMap1.invalidateSize();
+                if(normalMap2) normalMap2.invalidateSize();
+                if(floodMap1) floodMap1.invalidateSize();
+                if(floodMap2) floodMap2.invalidateSize();
+            }, 100);
         }
 
         // ==========================================
-        // ระบบแผนที่ Google Maps API
+        // 🌟 ระบบแผนที่ Leaflet (ฟรี 100%) 🌟
         // ==========================================
         let normalMap1, normalMap2, floodMap1, floodMap2;
         let normalMarker1, normalMarker2, floodMarker1, floodMarker2;
@@ -333,33 +343,44 @@
         let currentNode = 1;
         let currentMode = 'std'; 
 
-        function initMap() {
-            const defaultPos = { lat: 13.7278, lng: 100.7725 }; 
+        document.addEventListener('DOMContentLoaded', () => {
+            const defaultPos = [13.7278, 100.7725]; // พิกัด KMITL เป็นค่าเริ่มต้น
+            const tileLayerUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'; // URL ของ OpenStreetMap
+            const tileLayerAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+            // --- STATION 1 (Standard Map) ---
+            normalMap1 = L.map('map_n1_std').setView(defaultPos, 16);
+            L.tileLayer(tileLayerUrl, { attribution: tileLayerAttribution }).addTo(normalMap1);
+            normalMarker1 = L.marker(defaultPos).addTo(normalMap1).bindPopup("<b>STATION 1</b>");
+
+            // --- STATION 1 (Flood Map) ---
+            floodMap1 = L.map('map_n1_flood').setView(defaultPos, 16);
+            L.tileLayer(tileLayerUrl, { attribution: tileLayerAttribution }).addTo(floodMap1);
+            floodMarker1 = L.marker(defaultPos).addTo(floodMap1);
+            floodCircle1 = L.circle(defaultPos, { color: '#10b981', fillColor: '#10b981', fillOpacity: 0.35, radius: 0 }).addTo(floodMap1);
+
+            // --- STATION 2 (Standard Map) ---
+            normalMap2 = L.map('map_n2_std').setView(defaultPos, 16);
+            L.tileLayer(tileLayerUrl, { attribution: tileLayerAttribution }).addTo(normalMap2);
+            normalMarker2 = L.marker(defaultPos).addTo(normalMap2).bindPopup("<b>STATION 2</b>");
+
+            // --- STATION 2 (Flood Map) ---
+            floodMap2 = L.map('map_n2_flood').setView(defaultPos, 16);
+            L.tileLayer(tileLayerUrl, { attribution: tileLayerAttribution }).addTo(floodMap2);
+            floodMarker2 = L.marker(defaultPos).addTo(floodMap2);
+            floodCircle2 = L.circle(defaultPos, { color: '#10b981', fillColor: '#10b981', fillOpacity: 0.35, radius: 0 }).addTo(floodMap2);
             
-            normalMap1 = new google.maps.Map(document.getElementById("map_n1_std"), { zoom: 16, center: defaultPos, mapTypeId: 'hybrid' });
-            normalMarker1 = new google.maps.Marker({ position: defaultPos, map: normalMap1, title: "Node 1" });
-            normalMap2 = new google.maps.Map(document.getElementById("map_n2_std"), { zoom: 16, center: defaultPos, mapTypeId: 'hybrid' });
-            normalMarker2 = new google.maps.Marker({ position: defaultPos, map: normalMap2, title: "Node 2" });
-
-            floodMap1 = new google.maps.Map(document.getElementById("map_n1_flood"), { zoom: 16, center: defaultPos, mapTypeId: 'hybrid' });
-            floodMarker1 = new google.maps.Marker({ position: defaultPos, map: floodMap1, title: "Node 1" });
-            floodCircle1 = new google.maps.Circle({ strokeColor: "#10b981", strokeOpacity: 0.8, strokeWeight: 2, fillColor: "#10b981", fillOpacity: 0.35, map: floodMap1, center: defaultPos, radius: 0 });
-
-            floodMap2 = new google.maps.Map(document.getElementById("map_n2_flood"), { zoom: 16, center: defaultPos, mapTypeId: 'hybrid' });
-            floodMarker2 = new google.maps.Marker({ position: defaultPos, map: floodMap2, title: "Node 2" });
-            floodCircle2 = new google.maps.Circle({ strokeColor: "#10b981", strokeOpacity: 0.8, strokeWeight: 2, fillColor: "#10b981", fillOpacity: 0.35, map: floodMap2, center: defaultPos, radius: 0 });
-        }
+            // อัปเดตขนาดเมื่อโหลดเสร็จ
+            setTimeout(() => { normalMap1.invalidateSize(); floodMap1.invalidateSize(); }, 500);
+        });
 
         function updateMapVisibility() {
-            document.getElementById('map_n1_std').classList.remove('active');
-            document.getElementById('map_n1_flood').classList.remove('active');
-            document.getElementById('map_n2_std').classList.remove('active');
-            document.getElementById('map_n2_flood').classList.remove('active');
+            document.querySelectorAll('.map-view').forEach(el => el.classList.remove('active'));
 
-            if(currentNode === 1 && currentMode === 'std') document.getElementById('map_n1_std').classList.add('active');
-            if(currentNode === 1 && currentMode === 'flood') document.getElementById('map_n1_flood').classList.add('active');
-            if(currentNode === 2 && currentMode === 'std') document.getElementById('map_n2_std').classList.add('active');
-            if(currentNode === 2 && currentMode === 'flood') document.getElementById('map_n2_flood').classList.add('active');
+            if(currentNode === 1 && currentMode === 'std') { document.getElementById('map_n1_std').classList.add('active'); setTimeout(()=>normalMap1.invalidateSize(), 50); }
+            if(currentNode === 1 && currentMode === 'flood') { document.getElementById('map_n1_flood').classList.add('active'); setTimeout(()=>floodMap1.invalidateSize(), 50); }
+            if(currentNode === 2 && currentMode === 'std') { document.getElementById('map_n2_std').classList.add('active'); setTimeout(()=>normalMap2.invalidateSize(), 50); }
+            if(currentNode === 2 && currentMode === 'flood') { document.getElementById('map_n2_flood').classList.add('active'); setTimeout(()=>floodMap2.invalidateSize(), 50); }
         }
 
         function switchNode(id) {
@@ -377,16 +398,18 @@
         }
 
         function updateFloodAnMap(map, circle, marker, lat, lng, percentage) {
-            if (lat != 0) {
-                const pos = {lat: lat, lng: lng};
-                marker.setPosition(pos); circle.setCenter(pos); map.setCenter(pos); 
-                circle.setRadius(percentage * 2.0);
+            if (lat != 0 && lng != 0) {
+                const pos = [lat, lng]; // Leaflet ใช้ Array [lat, lng]
+                marker.setLatLng(pos); 
+                circle.setLatLng(pos); 
+                map.setView(pos, 16); 
+                circle.setRadius(percentage * 2.5); // ขยายวงกลมตาม %
                 
                 let color = "#10b981"; 
                 if (percentage >= 80) color = "#ef4444"; 
                 else if (percentage >= 50) color = "#f59e0b"; 
                 
-                circle.setOptions({strokeColor: color, fillColor: color});
+                circle.setStyle({color: color, fillColor: color});
             }
         }
         // ==========================================
@@ -581,9 +604,9 @@
             envLabels.push(t); tempDataN1.push(Number(te1)); tempDataN2.push(Number(te2)); pressDataN1.push(Number(pr1)); pressDataN2.push(Number(pr2));
             waterChart.update(); envChart.update();
 
-            // อัปเดตแผนที่ Google Maps ตามพิกัดที่ส่งมาจาก ESP32
-            if(la1 != 0 && normalMarker1) { const pos1 = {lat: la1, lng: lo1}; normalMarker1.setPosition(pos1); normalMap1.setCenter(pos1); }
-            if(la2 != 0 && normalMarker2) { const pos2 = {lat: la2, lng: lo2}; normalMarker2.setPosition(pos2); normalMap2.setCenter(pos2); }
+            // 🌟 อัปเดตแผนที่ Leaflet ตามพิกัดที่ส่งมาจาก ESP32 🌟
+            if(la1 != 0 && normalMarker1) { const pos1 = [la1, lo1]; normalMarker1.setLatLng(pos1); normalMap1.setView(pos1, 16); }
+            if(la2 != 0 && normalMarker2) { const pos2 = [la2, lo2]; normalMarker2.setLatLng(pos2); normalMap2.setView(pos2, 16); }
             if(la1 != 0 && floodMarker1) updateFloodAnMap(floodMap1, floodCircle1, floodMarker1, la1, lo1, p1);
             if(la2 != 0 && floodMarker2) updateFloodAnMap(floodMap2, floodCircle2, floodMarker2, la2, lo2, p2);
         });
