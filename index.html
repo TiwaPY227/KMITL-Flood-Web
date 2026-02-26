@@ -6,17 +6,20 @@
     <title>KMITL FLOOD CENTER | KMITL</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://www.youtube.com/iframe_api"></script>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
     
     <style>
         :root {
             --bg-color: #f4f7fa; --text-color: #1e293b; --card-bg: #ffffff;
             --shadow: 0 4px 20px rgba(0,0,0,0.05); --heading-color: #0ea5e9;
             --border: #e2e8f0; --btn-bg: #ffffff; --btn-text: #475569;
-            --clock-color: #64748b; --font-main: 'Bebas Neue', cursive; --font-sub: 'Inter', sans-serif;
+            --clock-color: #64748b; 
+            /* กำหนดตัวแปรฟอนต์ */
+            --font-main: 'Bebas Neue', cursive; 
+            --font-sub: 'Inter', sans-serif;
         }
         body.dark-mode {
             --bg-color: #0f172a; --text-color: #f8fafc; --card-bg: #1e293b;
@@ -25,8 +28,10 @@
             --clock-color: #94a3b8;
         }
         * { box-sizing: border-box; transition: background-color 0.3s, border-color 0.3s; }
+        
+        /* นำฟอนต์มาใช้งาน */
         body { background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; min-height: 100vh; font-family: var(--font-sub); }
-        h1, h2, #clock, .chip { font-family: var(--font-main); letter-spacing: 1px; }
+        h1, h2, #clock, .chip, .node-title-badge, .ai-value { font-family: var(--font-main); letter-spacing: 1px; }
 
         .top-nav { 
             padding: 10px 30px; display: flex; align-items: center; 
@@ -44,8 +49,19 @@
         .logo-kmitl:hover { opacity: 1; filter: grayscale(0%); }
         .theme-toggle-btn { padding: 8px 18px; border-radius: 20px; border: 1px solid var(--border); background: var(--btn-bg); color: var(--btn-text); cursor: pointer; font-size: 1.1rem; }
 
-        .hero { text-align: center; padding: 30px 20px 20px; }
-        .subject-title { font-size: 2.8rem; margin: 0; line-height: 1.1; color: var(--text-color); }
+        .hero { text-align: center; padding: 30px 20px 20px; overflow: hidden; } /* ซ่อนส่วนที่ล้นออกมา */
+        
+        /* 🌟 แก้ไข: ลดขนาดฟอนต์ และบังคับให้อยู่บรรทัดเดียวกัน 🌟 */
+        .subject-title {
+            font-size: clamp(1rem, 2.2vw, 1.8rem); /* ย่อขนาดและให้ปรับอัตโนมัติตามจอ */
+            margin: 0;
+            line-height: 1.1;
+            color: var(--text-color); 
+            font-family: var(--font-sub); 
+            font-weight: 800; 
+            white-space: nowrap; /* บังคับให้อยู่บรรทัดเดียวกัน */
+        }
+        
         .main-title { font-size: 1.2rem; color: var(--heading-color); margin-top: 12px; font-weight: 600; }
 
         .main-content { max-width: 1200px; margin: 0 auto; padding: 0 20px 40px; }
@@ -81,7 +97,7 @@
         .line-icon { font-size: 1.5rem; }
 
         .node-group { margin-bottom: 40px; }
-        .node-title-badge { display: inline-block; background: var(--text-color); color: var(--bg-color); font-family: var(--font-main); font-size: 1.8rem; padding: 5px 20px; border-radius: 8px 8px 0 0; letter-spacing: 2px;}
+        .node-title-badge { display: inline-block; background: var(--text-color); color: var(--bg-color); font-size: 1.8rem; padding: 5px 20px; border-radius: 8px 8px 0 0; letter-spacing: 2px;}
 
         .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; }
         
@@ -100,7 +116,16 @@
 
         .ai-box { text-align: center; padding: 15px 0; }
         .ai-label { font-size: 1rem; color: var(--clock-color); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;}
-        .ai-value { font-size: 2.2rem; font-family: var(--font-main); color: var(--text-color); line-height: 1.2; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);}
+        
+        .ai-value { 
+            font-size: 1.6rem; 
+            font-family: var(--font-sub); 
+            font-weight: 600;
+            color: var(--text-color); 
+            line-height: 1.3; 
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
         .divider { border-top: 1px dashed var(--border); margin: 10px 0; }
 
         .badge { padding: 6px 14px; border-radius: 8px; font-size: 0.9rem; font-weight: 800; color: white; text-transform: uppercase; letter-spacing: 1px; }
@@ -120,11 +145,10 @@
         .chip { padding: 8px 28px; border-radius: 30px; border: 1px solid var(--border); background: var(--btn-bg); color: var(--btn-text); cursor: pointer; font-size: 1.3rem; }
         .chip.active { background: var(--heading-color); color: white; border-color: var(--heading-color); }
         
-        /* 🌟 ปรับปรุงการซ่อน/แสดงแผนที่ของ Leaflet ให้เนียนขึ้น 🌟 */
         .map-container { position: relative; height: 500px; width: 100%; border-radius: 12px; overflow: hidden; border: 2px solid var(--border);}
         .map-view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; visibility: hidden; opacity: 0; z-index: 1; transition: opacity 0.4s ease; }
         .map-view.active { visibility: visible; opacity: 1; z-index: 2; }
-        body.dark-mode .leaflet-tile-pane { filter: invert(90%) hue-rotate(180deg) brightness(95%) contrast(90%); } /* แผนที่โหมดมืดแบบเท่ๆ */
+        body.dark-mode .leaflet-tile-pane { filter: invert(90%) hue-rotate(180deg) brightness(95%) contrast(90%); }
     </style>
 </head>
 <body>
@@ -325,7 +349,6 @@
             document.getElementById(viewId).classList.add('active');
             btnElement.classList.add('active');
             
-            // 🌟 สำคัญ! เพื่อให้แผนที่ Leaflet โหลดขนาดถูกต้องเมื่อสลับแท็บ
             setTimeout(() => {
                 if(normalMap1) normalMap1.invalidateSize();
                 if(normalMap2) normalMap2.invalidateSize();
@@ -335,7 +358,7 @@
         }
 
         // ==========================================
-        // 🌟 ระบบแผนที่ Leaflet (ฟรี 100%) 🌟
+        // ระบบแผนที่ Leaflet (ฟรี 100%)
         // ==========================================
         let normalMap1, normalMap2, floodMap1, floodMap2;
         let normalMarker1, normalMarker2, floodMarker1, floodMarker2;
@@ -344,33 +367,28 @@
         let currentMode = 'std'; 
 
         document.addEventListener('DOMContentLoaded', () => {
-            const defaultPos = [13.7278, 100.7725]; // พิกัด KMITL เป็นค่าเริ่มต้น
-            const tileLayerUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'; // URL ของ OpenStreetMap
-            const tileLayerAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+            const defaultPos = [13.7278, 100.7725]; 
+            const tileLayerUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'; 
+            const tileLayerAttribution = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
-            // --- STATION 1 (Standard Map) ---
             normalMap1 = L.map('map_n1_std').setView(defaultPos, 16);
             L.tileLayer(tileLayerUrl, { attribution: tileLayerAttribution }).addTo(normalMap1);
             normalMarker1 = L.marker(defaultPos).addTo(normalMap1).bindPopup("<b>STATION 1</b>");
 
-            // --- STATION 1 (Flood Map) ---
             floodMap1 = L.map('map_n1_flood').setView(defaultPos, 16);
             L.tileLayer(tileLayerUrl, { attribution: tileLayerAttribution }).addTo(floodMap1);
             floodMarker1 = L.marker(defaultPos).addTo(floodMap1);
             floodCircle1 = L.circle(defaultPos, { color: '#10b981', fillColor: '#10b981', fillOpacity: 0.35, radius: 0 }).addTo(floodMap1);
 
-            // --- STATION 2 (Standard Map) ---
             normalMap2 = L.map('map_n2_std').setView(defaultPos, 16);
             L.tileLayer(tileLayerUrl, { attribution: tileLayerAttribution }).addTo(normalMap2);
             normalMarker2 = L.marker(defaultPos).addTo(normalMap2).bindPopup("<b>STATION 2</b>");
 
-            // --- STATION 2 (Flood Map) ---
             floodMap2 = L.map('map_n2_flood').setView(defaultPos, 16);
             L.tileLayer(tileLayerUrl, { attribution: tileLayerAttribution }).addTo(floodMap2);
             floodMarker2 = L.marker(defaultPos).addTo(floodMap2);
             floodCircle2 = L.circle(defaultPos, { color: '#10b981', fillColor: '#10b981', fillOpacity: 0.35, radius: 0 }).addTo(floodMap2);
             
-            // อัปเดตขนาดเมื่อโหลดเสร็จ
             setTimeout(() => { normalMap1.invalidateSize(); floodMap1.invalidateSize(); }, 500);
         });
 
@@ -399,11 +417,11 @@
 
         function updateFloodAnMap(map, circle, marker, lat, lng, percentage) {
             if (lat != 0 && lng != 0) {
-                const pos = [lat, lng]; // Leaflet ใช้ Array [lat, lng]
+                const pos = [lat, lng]; 
                 marker.setLatLng(pos); 
                 circle.setLatLng(pos); 
                 map.setView(pos, 16); 
-                circle.setRadius(percentage * 2.5); // ขยายวงกลมตาม %
+                circle.setRadius(percentage * 2.5); 
                 
                 let color = "#10b981"; 
                 if (percentage >= 80) color = "#ef4444"; 
@@ -604,7 +622,7 @@
             envLabels.push(t); tempDataN1.push(Number(te1)); tempDataN2.push(Number(te2)); pressDataN1.push(Number(pr1)); pressDataN2.push(Number(pr2));
             waterChart.update(); envChart.update();
 
-            // 🌟 อัปเดตแผนที่ Leaflet ตามพิกัดที่ส่งมาจาก ESP32 🌟
+            // อัปเดตแผนที่ Leaflet ตามพิกัดที่ส่งมาจาก ESP32
             if(la1 != 0 && normalMarker1) { const pos1 = [la1, lo1]; normalMarker1.setLatLng(pos1); normalMap1.setView(pos1, 16); }
             if(la2 != 0 && normalMarker2) { const pos2 = [la2, lo2]; normalMarker2.setLatLng(pos2); normalMap2.setView(pos2, 16); }
             if(la1 != 0 && floodMarker1) updateFloodAnMap(floodMap1, floodCircle1, floodMarker1, la1, lo1, p1);
