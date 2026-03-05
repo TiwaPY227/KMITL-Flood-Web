@@ -368,7 +368,8 @@
         let currentMode = 'std'; 
 
         document.addEventListener('DOMContentLoaded', () => {
-            const defaultPos = [13.7278, 100.7725]; 
+            // 🌟 อัปเดตพิกัดเริ่มต้น 13°43'38.9"N 100°46'28.2"E แปลงเป็น Decimal Degrees แล้ว
+            const defaultPos = [13.727472, 100.7745]; 
             const tileLayerUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'; 
             const tileLayerAttribution = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
@@ -574,15 +575,18 @@
 
             const getVal = (obj, key, fallback) => (obj && obj[key] !== undefined) ? obj[key] : fallback;
 
+            // 🌟 อัปเดต: ถ้าส่ง 0.0 มา ให้ยัดค่า Default (13.727472, 100.7745) ไปเลย 
             let p1 = getVal(data.node1, 'p', 0), r1 = getVal(data.node1, 'r', 0);
             let te1 = getVal(data.node1, 'te', 0.0), pr1 = getVal(data.node1, 'pr', 0.0);
             let la1 = getVal(data.node1, 'la', 0.0), lo1 = getVal(data.node1, 'lo', 0.0);
+            if (la1 === 0 || lo1 === 0) { la1 = 13.727472; lo1 = 100.7745; }
             let t1 = getVal(data.node1, 't', 99), d1 = getVal(data.node1, 'd', 0);
             let ai_w1 = getVal(data.node1, 'ai_w', "WAITING DATA"), ai_r1 = getVal(data.node1, 'ai_r', "WAITING DATA");
 
             let p2 = getVal(data.node2, 'p', 0), r2 = getVal(data.node2, 'r', 0);
             let te2 = getVal(data.node2, 'te', 0.0), pr2 = getVal(data.node2, 'pr', 0.0);
             let la2 = getVal(data.node2, 'la', 0.0), lo2 = getVal(data.node2, 'lo', 0.0);
+            if (la2 === 0 || lo2 === 0) { la2 = 13.727472; lo2 = 100.7745; }
             let t2 = getVal(data.node2, 't', 99), d2 = getVal(data.node2, 'd', 0);
             let ai_w2 = getVal(data.node2, 'ai_w', "WAITING DATA"), ai_r2 = getVal(data.node2, 'ai_r', "WAITING DATA");
 
@@ -623,7 +627,7 @@
             envLabels.push(t); tempDataN1.push(Number(te1)); tempDataN2.push(Number(te2)); pressDataN1.push(Number(pr1)); pressDataN2.push(Number(pr2));
             waterChart.update(); envChart.update();
 
-            // อัปเดตแผนที่ Leaflet ตามพิกัดที่ส่งมาจาก ESP32
+            // อัปเดตแผนที่ Leaflet ตามพิกัด
             if(la1 != 0 && normalMarker1) { const pos1 = [la1, lo1]; normalMarker1.setLatLng(pos1); normalMap1.setView(pos1, 16); }
             if(la2 != 0 && normalMarker2) { const pos2 = [la2, lo2]; normalMarker2.setLatLng(pos2); normalMap2.setView(pos2, 16); }
             if(la1 != 0 && floodMarker1) updateFloodAnMap(floodMap1, floodCircle1, floodMarker1, la1, lo1, p1);
